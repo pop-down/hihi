@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9/21 고고싱</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #331919;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .sort-select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .popup-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .popup-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .popup-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .popup-header {
+            background: #f0f4f8;
+            color: #4a5568;
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .popup-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .priority-badge {
+            background: rgba(51, 51, 51, 0.1);
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            border: 1px solid rgba(51, 51, 51, 0.2);
+        }
+
+        .priority-high { background: #ffb3b3; }
+        .priority-medium { background: #ffd9b3; }
+        .priority-low { background: #c8e6c9; }
+
+        .expand-icon {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+
+        .expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .popup-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .expanded .popup-content {
+            max-height: 1000px;
+        }
+
+        .popup-details {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 15px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-ongoing { background: #d4edda; color: #155724; }
+        .status-ending { background: #fff3cd; color: #856404; }
+        .status-ended { background: #f8d7da; color: #721c24; }
+
+        .waiting-info {
+            background: #e7f3ff;
+            border: 2px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+        }
+
+        .waiting-icon {
+            color: #0066cc;
+            margin-right: 8px;
+        }
+
+        .url-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .url-link {
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .url-link:hover {
+            background: #0056b3;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            border: 1px solid #bbdefb;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .popup-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-buttons {
+                justify-content: center;
+            }
+            
+            .sort-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .popup-header {
+                padding: 15px;
+            }
+            
+            .popup-title {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 9/21 고고싱</h1>
+            <p>뭐하고 놀까</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" class="search-box" placeholder="검색어 입력">
+            
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">전체</button>
+                <button class="filter-btn" data-filter="high">높은 우선순위</button>
+                <button class="filter-btn" data-filter="ongoing">진행중</button>
+                <button class="filter-btn" data-filter="reservation">예약 필요</button>
+                <button class="filter-btn" data-filter="beauty">뷰티</button>
+                <button class="filter-btn" data-filter="food">식음료</button>
+            </div>
+            
+            <div class="sort-controls">
+                <label>정렬:</label>
+                <select class="sort-select">
+                    <option value="smart">추천순</option>
+                    <option value="priority">우선순위순</option>
+                    <option value="date">기간순</option>
+                    <option value="name">이름순</option>
+                    <option value="waiting">웨이팅 시간순</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="popup-grid" id="popupGrid">
+            <!-- 팝업 카드들이 여기에 동적으로 추가됩니다 -->
+        </div>
+
+        <div class="no-results" id="noResults" style="display: none;">
+            검색 결과가 없습니다.
+        </div>
+    </div>
+
+    <script>
+        const popupData = [
+            {
+                name: "대한민국 행복충전소",
+                period: "9/19(금)-9/21(일)",
+                endDate: "2025-09-21",
+                hours: "매일 11:00~19:00",
+                location: "성동구 연무장길 18, 피치스도원 성수",
+                content: "[9/19-9/21, 3일간] QR 이벤트로 스티커를 모아 유명 스타가맹점 메뉴로 교환, 온누리상품권으로 성수동 가맹점 이벤트",
+                events: "현장 방문 시 키링 굿즈, 전통음료, 클렌징 밀크 증정",
+                waiting: "정보 없음",
+                urls: ["https://www.instagram.com/p/DOubtlSktQY/"],
+                priority: "high",
+                status: "ongoing",
+                category: ["food"],
+                waitingTime: 0,
+                tags: ["성수역 도보 5분"]
+            },
+            {
+                name: "써모스 해피 루틴 데이",
+                period: "9/18(목)~9/28(일)",
+                endDate: "2025-09-28",
+                hours: "12:00~20:00",
+                location: "LES601성수 (성동구 연무장17길 4)",
+                content: "[9/18-9/28, 11일간] 이나피스퀘어 콜라보 제품 선공개, 루틴 프로그램 체험, 4단계 미션 완료 후 2층 카페 이용",
+                events: "전 제품 30% 할인, 콜라보 제품 구매 시 리유저블백 1:1 증정, 매일 선착순 100명 럭키드로우",
+                waiting: "웨이팅 기계 있음, 오픈 15분 전 도착 추천 (앞에 13팀 대기)",
+                urls: ["https://m.blog.naver.com/ilsang___gongyu/224007680643", "https://blog.naver.com/hyoniholic"],
+                priority: "high",
+                status: "ongoing",
+                category: ["lifestyle"],
+                waitingTime: 15,
+                tags: ["성수역 도보 7분"]
+            },
+            {
+                name: "NH 올원타운",
+                period: "9/1(월)~9/30(화)",
+                endDate: "2025-09-30",
+                hours: "11:00~19:00",
+                location: "NH 올원타운 팝업 (성동구 연무장13길 11)",
+                content: "[9/1-9/30, 30일간] 올원뱅크 가입 체험, 금고 오픈 챌린지, 쌀그램 챌린지, 게임 체험",
+                events: "올원뱅크 가입 시 올원 부스터, 쌀 아이스크림, 포토존 사진 인화 서비스",
+                waiting: "번호표 발급 후 대기",
+                urls: ["https://m.blog.naver.com/soljeon93/224010686091"],
+                priority: "high",
+                status: "ongoing",
+                category: ["finance"],
+                waitingTime: 5,
+                tags: ["성수역 도보 5분"]
+            },
+            {
+                name: "핀란드 영양분식",
+                period: "9/12(금)~9/21(일)",
+                endDate: "2025-09-21",
+                hours: "12:00~20:00 (입장마감 19:30)",
+                location: "MM성수 (성동구 연무장길 95)",
+                content: "미슐랭 3스타 셰프와 흑백요리사가 만든 영양군 식재료 분식, 자작나무숲 미디어아트, 밤하늘 체험",
+                events: "스탬프투어 완료 시 휘낭시에+뻥스크림, 4종 분식세트+초화주 제공",
+                waiting: "현장 대기 시 20-30분 웨이팅",
+                urls: ["https://m.blog.naver.com/bariyoone/224011502376", "https://blog.naver.com/realjaekyo"],
+                priority: "high",
+                status: "ongoing",
+                category: ["food"],
+                waitingTime: 25,
+                reservation: true
+            },
+            {
+                name: "기아 EV5 X 파이브가이즈",
+                period: "9/12~9/21",
+                endDate: "2025-09-21",
+                hours: "11:00~20:00",
+                location: "기아 언플러그드 그라운드 (성동구 상원4길 10)",
+                content: "스탬프 투어 5개 완료 시 파이브가이즈 버거/쉐이크 룰렛 이벤트, 하만카돈 스피커 체험",
+                events: "무료 땅콩 증정, 하만카돈 스피커 추첨, 인형 키링 증정",
+                waiting: "정보 없음",
+                urls: ["https://m.blog.naver.com/yourlunacy/224006403020"],
+                priority: "medium",
+                status: "ongoing",
+                category: ["automotive", "food"],
+                waitingTime: 0
+            },
+            {
+                name: "바를 팝업",
+                period: "9/12~9/21",
+                endDate: "2025-09-21",
+                hours: "11:00~21:00",
+                location: "517랩 (성동구 연무장길 31-1 1층 103호)",
+                content: "시카밤부 토너패드, 차콜 멜팅밤, 선쿠션 체험, 키링 만들기",
+                events: "SNS 팔로우 시 샘플 3종 세트, 구매 시 최대 32% 할인 및 가챠",
+                waiting: "웨이팅 태블릿 있음, 사람이 많지 않으면 현장 대기 잠깐",
+                urls: ["https://m.blog.naver.com/yourlunacy/224007721302"],
+                priority: "medium",
+                status: "ongoing",
+                category: ["beauty"],
+                waitingTime: 10
+            },
+            {
+                name: "Treed 트리드 팝업",
+                period: "9/17(수)~9/23(화)",
+                endDate: "2025-09-23",
+                hours: "11:00~20:00",
+                location: "무신사 뷰티 스페이스1 (성동구 연무장길 81)",
+                content: "한국 전통 향 체험, 사군자 향 포함 5가지 향 체험",
+                events: "29CM 좋아요 및 인스타 팔로우 시 난초 샘플 키트 및 소나무 엽서 증정",
+                waiting: "정보 없음",
+                urls: ["https://m.blog.naver.com/ilsang___gongyu/224007703825"],
+                priority: "medium",
+                status: "ongoing",
+                category: ["beauty"],
+                waitingTime: 0
+            },
+            {
+                name: "보다나 Born To Blow",
+                period: "9/19(금)~9/21(일)",
+                endDate: "2025-09-21",
+                hours: "금 15:00-19:00, 토-일 11:00-19:00 (입장마감 18:30)",
+                location: "성수 남정빌딩 1층 (성수이로 88)",
+                content: "보다나 성수 첫 팝업! 빛나는 디바의 스타일 여정 체험. 5단계 디바 체험 (AI 캐릭터 생성, 녹음실 무비 촬영, 백스테이지 스타일링, 메인스테이지, 리워드존), 글래어 스타일러 폴드 등 신제품 체험",
+                events: "카카오 예약 시 러블리 헤어 클립, 인스타 팔로우 시 리워드 LP 키링 + 트라이얼키트, 현장 사진 업로드 시 본품 추첨",
+                waiting: "",
+                urls: ["https://m.blog.naver.com/chi_v_ola/224014515146", "https://blog.naver.com/twinkle__hee"],
+                priority: "low",
+                status: "ongoing",
+                category: ["beauty"],
+                waitingTime: 0,
+                reservation: true
+            },
+            {
+                name: "파인드카푸어 플래그십 스토어",
+                period: "9/11~9/30",
+                endDate: "2025-09-30",
+                hours: "11:00~20:00",
+                location: "파인드카푸어 플래그쉽 성수 (성동구 성수이로7가길 23 1층, 2층)",
+                content: "신상품 체험 및 구매",
+                events: "50% 할인 쿠폰, 뉴믹스 말차라떼 2p 및 쿠키 증정, 구매 금액별 사은품",
+                waiting: "정보 없음",
+                urls: ["https://m.blog.naver.com/yourlunacy/224008690616"],
+                priority: "low",
+                status: "ongoing",
+                category: ["fashion"],
+                waitingTime: 0
+            },
+            {
+                name: "2025 제로원데이 전시",
+                period: "9/17(수)~9/21(일)",
+                endDate: "2025-09-21",
+                hours: "10:30~20:00",
+                location: "현대 성수 복합거점 (성동구 성수일로6길 10)",
+                content: "크리에이터·스타트업·현대자동차그룹 융복합 프로젝트 전시",
+                events: "설문 참여 시 커피쿠폰 즉시 증정",
+                waiting: "사전예약 없이 자유롭게 무료 입장",
+                urls: ["https://m.blog.naver.com/ilsang___gongyu/224010924052"],
+                priority: "low",
+                status: "ongoing",
+                category: ["exhibition"],
+                waitingTime: 0
+            },
+            {
+                name: "메디큐브 X 마이멜로디",
+                period: "9/10~9/22",
+                endDate: "2025-09-22",
+                hours: "11:00~21:00",
+                location: "트렌드팟 바이 올리브영 성수 (성동구 연무장7길 13)",
+                content: "메디큐브 에이지알 뷰티 디바이스 체험, 마이멜로디 콜라보 제품 판매",
+                events: "SNS 팔로우 시 제로모공패드 2매, 체험 부스 스탬프 2개 이상 시 사은품, 구매 시 할인쿠폰",
+                waiting: "예약불가 현장웨이팅, 대기시간 약 20분 (외국인 관광객 다수)",
+                urls: ["https://m.blog.naver.com/pqwe1003/224011602751"],
+                priority: "low",
+                status: "ongoing",
+                category: ["beauty"],
+                waitingTime: 20
+            }
+        ];
+
+        let filteredData = [...popupData];
+        let currentSort = 'smart';
+
+        function getStatusBadge(status) {
+            const statusMap = {
+                'ongoing': { class: 'status-ongoing', text: '진행중' },
+                'ending': { class: 'status-ending', text: '마감임박' },
+                'ended': { class: 'status-ended', text: '종료' }
+            };
+            const statusInfo = statusMap[status] || statusMap['ended'];
+            return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+        }
+
+        function getPriorityBadge(priority) {
+            const priorityMap = {
+                'high': { class: 'priority-high', text: '고고싱' },
+                'medium': { class: 'priority-medium', text: '갈만한듯' },
+                'low': { class: 'priority-low', text: '시간되면' }
+            };
+            const priorityInfo = priorityMap[priority] || priorityMap['low'];
+            return `<span class="priority-badge ${priorityInfo.class}">${priorityInfo.text}</span>`;
+        }
+
+        function getWaitingInfo(waiting, waitingTime) {
+            if (waiting === "정보 없음") return '';
+            return `
+                <div class="waiting-info">
+                    <span class="waiting-icon">⏰</span>
+                    <strong>웨이팅 정보:</strong> ${waiting}
+                </div>
+            `;
+        }
+
+        function getTagsDisplay(tags) {
+            if (!tags || tags.length === 0) return '';
+            return `
+                <div class="detail-section">
+                    <div class="detail-label">🏷️ 태그</div>
+                    <div class="tags-container">
+                        ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createPopupCard(popup) {
+            const urlLinks = popup.urls.map((url, index) => 
+                `<a href="${url}" target="_blank" class="url-link">후기 ${index + 1}</a>`
+            ).join('');
+
+            return `
+                <div class="popup-card" data-popup='${JSON.stringify(popup)}'>
+                    <div class="popup-header" onclick="toggleCard(this)">
+                        <div>
+                            <div class="popup-title">${popup.name}</div>
+                            <div style="font-size: 12px; margin-top: 5px;">${popup.hours}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            ${getPriorityBadge(popup.priority)}
+                            <div class="expand-icon">▼</div>
+                        </div>
+                    </div>
+                    <div class="popup-content">
+                        <div class="popup-details">
+                            <!-- ${getStatusBadge(popup.status)} -->
+                            
+                            <div class="detail-section">
+                                <div class="detail-label">📍 위치</div>
+                                <div class="detail-value">${popup.location}</div>
+                            </div>
+                            
+                            <div class="detail-section">
+                                <div class="detail-label">🕐 운영시간</div>
+                                <div class="detail-value">${popup.hours}</div>
+                            </div>
+                            
+                            <div class="detail-section">
+                                <div class="detail-label">📝 내용</div>
+                                <div class="detail-value">${popup.content}</div>
+                            </div>
+                            
+                            <div class="detail-section">
+                                <div class="detail-label">🎁 이벤트</div>
+                                <div class="detail-value">${popup.events}</div>
+                            </div>
+
+                            ${getWaitingInfo(popup.waiting, popup.waitingTime)}
+
+                            ${getTagsDisplay(popup.tags)}
+
+                            <div class="detail-section">
+                                <div class="detail-label">🔗 관련 링크</div>
+                                <div class="url-links">${urlLinks}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleCard(header) {
+            const card = header.closest('.popup-card');
+            card.classList.toggle('expanded');
+        }
+
+        function renderPopups(data) {
+            const grid = document.getElementById('popupGrid');
+            const noResults = document.getElementById('noResults');
+            
+            if (data.length === 0) {
+                grid.style.display = 'none';
+                noResults.style.display = 'block';
+            } else {
+                grid.style.display = 'grid';
+                noResults.style.display = 'none';
+                grid.innerHTML = data.map(createPopupCard).join('');
+            }
+        }
+
+        function sortData(data, sortBy) {
+            const sorted = [...data];
+
+            switch(sortBy) {
+                case 'smart':
+                    // 간단한 복합 정렬: 우선순위 우선, 그 다음 종료일 빠른 순
+                    const smartPriorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+                    return sorted.sort((a, b) => {
+                        // 우선순위가 다르면 우선순위로 정렬
+                        if (a.priority !== b.priority) {
+                            return smartPriorityOrder[b.priority] - smartPriorityOrder[a.priority];
+                        }
+                        // 우선순위가 같으면 종료일 빠른 순으로 정렬
+                        return new Date(a.endDate) - new Date(b.endDate);
+                    });
+                case 'priority':
+                    const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+                    return sorted.sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority]);
+                case 'date':
+                    return sorted.sort((a, b) => new Date(a.endDate) - new Date(b.endDate));
+                case 'name':
+                    return sorted.sort((a, b) => a.name.localeCompare(b.name));
+                case 'waiting':
+                    return sorted.sort((a, b) => a.waitingTime - b.waitingTime);
+                default:
+                    return sorted;
+            }
+        }
+
+        function filterData(data, filter) {
+            switch(filter) {
+                case 'all':
+                    return data;
+                case 'high':
+                    return data.filter(popup => popup.priority === 'high');
+                case 'ongoing':
+                    return data.filter(popup => popup.status === 'ongoing');
+                case 'reservation':
+                    return data.filter(popup => popup.reservation);
+                case 'beauty':
+                    return data.filter(popup => popup.category.includes('beauty'));
+                case 'food':
+                    return data.filter(popup => popup.category.includes('food'));
+                default:
+                    return data;
+            }
+        }
+
+        function searchData(data, searchTerm) {
+            if (!searchTerm) return data;
+            
+            const term = searchTerm.toLowerCase();
+            return data.filter(popup => 
+                popup.name.toLowerCase().includes(term) ||
+                popup.content.toLowerCase().includes(term) ||
+                popup.location.toLowerCase().includes(term)
+            );
+        }
+
+        function updateDisplay() {
+            let result = [...popupData];
+            
+            // 검색 적용
+            const searchTerm = document.querySelector('.search-box').value;
+            result = searchData(result, searchTerm);
+            
+            // 필터 적용
+            const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+            result = filterData(result, activeFilter);
+            
+            // 정렬 적용
+            const sortBy = document.querySelector('.sort-select').value;
+            result = sortData(result, sortBy);
+            
+            filteredData = result;
+            renderPopups(result);
+        }
+
+        // 이벤트 리스너 설정
+        document.querySelector('.search-box').addEventListener('input', updateDisplay);
+
+        document.querySelector('.sort-select').addEventListener('change', updateDisplay);
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                updateDisplay();
+            });
+        });
+
+        // 초기 렌더링
+        updateDisplay();
+    </script>
+</body>
+</html>
