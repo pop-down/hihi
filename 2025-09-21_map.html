@@ -678,6 +678,36 @@
             }
         }
 
+        // 주소 정규화 함수
+        function normalizeAddress(address) {
+            // 괄호 안의 부가 정보 제거
+            let normalized = address.replace(/\([^)]*\)/g, '').trim();
+
+            // 쉼표로 구분된 경우 첫 번째 주소만 사용
+            if (normalized.includes(',')) {
+                normalized = normalized.split(',')[0].trim();
+            }
+
+            // '서울특별시' 또는 '서울시'가 없으면 추가
+            if (!normalized.startsWith('서울')) {
+                normalized = '서울특별시 ' + normalized;
+            } else if (normalized.startsWith('서울시')) {
+                normalized = normalized.replace('서울시', '서울특별시');
+            }
+
+            // 정규식으로 주소 패턴 추출 (구 + 도로명 + 번지)
+            const pattern = /(?:서울특별시\s+)?(\S+구)\s+(\S+(?:로|길))\s+(\d+(?:-\d+)?)/;
+            const match = normalized.match(pattern);
+
+            if (match) {
+                // 서울특별시 + 구 + 도로명 + 번지 형식으로 재구성
+                normalized = `서울특별시 ${match[1]} ${match[2]} ${match[3]}`;
+            }
+
+            console.log(`주소 정규화: "${address}" → "${normalized}"`);
+            return normalized;
+        }
+
         // 주소를 좌표로 변환하고 마커 추가
         function addMarkersToMap() {
             console.log('addMarkersToMap 함수 호출됨');
@@ -695,12 +725,19 @@
             markers = [];
             infoWindows = [];
 
-            filteredData.forEach((popup, index) => {
-                console.log(`처리 중: ${popup.name} - ${popup.location}`);
+            let successCount = 0;
+            let errorCount = 0;
 
-                // 주소를 좌표로 변환
-                geocoder.addressSearch(popup.location, function(result, status) {
-                    console.log(`주소 검색 결과 (${popup.name}):`, result, status);
+            filteredData.forEach((popup, index) => {
+                // setTimeout을 사용하여 순차적으로 요청 (API 제한 회피)
+                setTimeout(() => {
+                    // 주소 정규화
+                    const normalizedAddress = normalizeAddress(popup.location);
+                    console.log(`처리 중 [${index+1}/${filteredData.length}]: ${popup.name}`);
+
+                    // 정규화된 주소를 좌표로 변환
+                    geocoder.addressSearch(normalizedAddress, function(result, status) {
+                        console.log(`주소 검색 결과 (${popup.name}):`, status);
 
                     if (status === kakao.maps.services.Status.OK) {
                         const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
@@ -753,13 +790,31 @@
 
                         markers.push(marker);
                         infoWindows.push(infoWindow);
+                        successCount++;
+                        console.log(`마커 추가 성공 [${successCount}/${filteredData.length}]`);
                     } else {
-                        console.error(`주소 검색 실패 (${popup.name}):`, status, popup.location);
+                        console.error(`주소 검색 실패 (${popup.name}):`, status);
+                        console.error(`  원본 주소: ${popup.location}`);
+                        console.error(`  정규화된 주소: ${normalizedAddress}`);
+                        errorCount++;
+                    }
+
+                    // 모든 처리가 끝났는지 확인
+                    if (successCount + errorCount === filteredData.length) {
+                        console.log(`마커 추가 완료: 성공 ${successCount}개, 실패 ${errorCount}개`);
+
+                        // 모든 마커가 보이도록 지도 범위 조정
+                        if (markers.length > 0) {
+                            const bounds = new kakao.maps.LatLngBounds();
+                            markers.forEach(marker => {
+                                bounds.extend(marker.getPosition());
+                            });
+                            map.setBounds(bounds);
+                        }
                     }
                 });
+                }, index * 200); // 각 요청 사이에 200ms 간격
             });
-
-            console.log('마커 추가 완료. 총 마커 수:', markers.length);
         }
 
         // 팝업 상세정보 표시 (리스트 뷰로 전환하고 해당 카드 확장)
