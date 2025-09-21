@@ -603,17 +603,35 @@
         function initMap() {
             console.log('initMap 함수 호출됨');
 
-            // 카카오맵이 아직 로드되지 않았다면 로드를 시도
+            // 카카오맵이 아직 로드되지 않았다면 기다림
             if (!window.kakao || !window.kakao.maps) {
-                console.log('카카오맵 API를 로드합니다...');
+                console.log('카카오맵 API 로드 대기 중...');
 
-                // kakao.maps.load를 사용하여 API 로드
+                // API가 로드될 때까지 대기
+                let checkCount = 0;
+                const checkKakaoLoad = setInterval(() => {
+                    checkCount++;
+                    if (window.kakao && window.kakao.maps) {
+                        clearInterval(checkKakaoLoad);
+                        console.log('카카오맵 API 감지됨');
+
+                        // kakao.maps.load 호출
+                        kakao.maps.load(function() {
+                            console.log('카카오맵 API 로드 완료');
+                            initMapCore();
+                        });
+                    } else if (checkCount > 100) { // 10초 동안 체크 (100ms * 100 = 10초)
+                        clearInterval(checkKakaoLoad);
+                        console.error('카카오맵 API 로드 실패');
+                        alert('지도를 불러올 수 없습니다. 페이지를 새로고침해주세요.');
+                    }
+                }, 100);
+            } else {
+                // 이미 로드되어 있으면 바로 실행
                 kakao.maps.load(function() {
                     console.log('카카오맵 API 로드 완료');
                     initMapCore();
                 });
-            } else {
-                initMapCore();
             }
         }
 
